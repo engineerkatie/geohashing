@@ -1,0 +1,141 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_binary(
+    name = "lemon",
+    srcs = ["tool/lemon.c"],
+)
+
+cc_binary(
+    name = "mksourceid",
+    srcs = ["tool/mksourceid.c"],
+)
+
+COMPILER_OPTS = [
+    "-DNDEBUG=1",
+    "-DHAVE_FDATASYNC=1",
+]
+
+genrule(
+    name = "generate_parse_source",
+    tools = [
+        ":lemon",
+    ],
+    outs = [
+        "parse.c",
+        "parse.h",
+    ],
+    srcs = [
+        "src/parse.y",
+        "tool/lempar.c",
+    ],
+    cmd = """
+        cp -v $(location src/parse.y) . &&
+        cp -v $(location tool/lempar.c) . &&
+        $(location :lemon) -s parse.y &&
+        cp -v parse.c parse.h $(@D)
+    """,
+)
+
+genrule(
+    name = "generate_sqlite3.h",
+    tools = [
+        "tool/mksqlite3h.tcl",
+        ":mksourceid",
+    ],
+    srcs = [
+        "src/sqlite.h.in",
+        "manifest",
+        "VERSION",
+        "ext/fts5/fts5.h",
+        "ext/rtree/sqlite3rtree.h",
+        "ext/session/sqlite3session.h",
+    ],
+    outs = ["src/sqlite3.h"],
+    cmd = """
+        cp -v $(location :mksourceid) . &&
+        tclsh $(location :tool/mksqlite3h.tcl) $$(dirname $(location :VERSION)) > $(location :src/sqlite3.h)
+    """,
+)
+
+cc_binary(
+    name = "mkkeywordhash",
+    srcs = ["tool/mkkeywordhash.c"],
+)
+
+genrule(
+    name = "generate_keywordhash.h",
+    tools = [":mkkeywordhash"],
+    outs = ["src/keywordhash.h"],
+    cmd = "$(location :mkkeywordhash) > $(location :src/keywordhash.h)",
+)
+
+genrule(
+    name = "generate_opcodes_source",
+    tools = [
+        "tool/mkopcodec.tcl",
+        "tool/mkopcodeh.tcl",
+    ],
+    outs = [
+        "src/opcodes.c",
+        "src/opcodes.h",
+    ],
+    srcs = [
+        "parse.h",
+        "src/vdbe.c",
+    ],
+    cmd = """
+cat $(location parse.h) $(location src/vdbe.c) | tclsh $(location tool/mkopcodeh.tcl) > opcodes.h &&
+tclsh $(location tool/mkopcodec.tcl) opcodes.h > opcodes.c &&
+mkdir -vp  $(@D)/src &&
+cp -v opcodes.c opcodes.h $(@D)/src
+    """,
+)
+
+genrule(
+    name = "generate_sqlite3.c",
+    tools = [
+        "tool/vdbe-compress.tcl",
+        "tool/tool/mksqlite3c.tcl",
+    ],
+    outs = [
+        "src/sqlite3.c",
+    ],
+    srcs = glob([ "src/*" ]) + [
+         "ext/fts/fts5.c",
+         "ext/fts/fts5.h",
+         "ext/session/sqlite3session.h",
+    ],
+    cmd = """
+	mkdir tsrc
+	cp -f src tsrc
+	rm tsrc/sqlite.h.in tsrc/parse.y
+	tclsh tool/vdbe-compress.tcl <tsrc/vdbe.c >vdbe.new
+	mv vdbe.new tsrc/vdbe.c
+	cp fts5.c fts5.h tsrc
+	tclsh tool/mksqlite3c.tcl
+	cp tsrc/sqlite3ext.h .
+	cp ext/session/sqlite3session.h .
+	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
+	cat sqlite3.c >>tclsqlite3.c
+	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
+	cat src/tclsqlite.c >>tclsqlite3.c
+
+    """,
+)
+
+cc_library(
+    name = "sqlite3",
+    hdrs = ["src/sqlite3.h"],
+    srcs = glob(
+            ["src/*.c", "src/*.h"],
+        ) + [
+        "src/keywordhash.h",
+        "src/sqlite3.h",
+        "parse.c",
+        "parse.h",
+        "src/opcodes.c",
+        "src/opcodes.h"
+    ],
+    includes = [".", "src"],
+    copts = ["-DSQLITE_CORE"] + COMPILER_OPTS,
+)

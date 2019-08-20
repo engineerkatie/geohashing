@@ -1,0 +1,56 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+log.txt
+
+# clion stuff
+.idea
+cmake-build-debug
+
+# vim related
+*.swp
+*.swo
+.*.swn
+.*.swm
+
+**/*.pyc
+bazel-*/**
+bazel-*
+tmp/**
+optimframe/src/data/*.xml
+optimframe/src/data/*.asc
+
+**/*.DS_Store
+.clwb
+.idea
+.ijwb
