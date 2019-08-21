@@ -6,6 +6,7 @@ cc_binary(
     srcs = glob(["*.cpp"]),
     deps = [
          "//sql/src/cpp:lib",
+         "//geohash/src/cpp:lib",
     ],
     data = [
     ]

@@ -21,6 +21,9 @@ public:
 
   void nuke(void);
 
+  SqliteQuery *bind(std::size_t index, const void *data, std::size_t size);
+  SqliteQuery *bind(std::size_t index, const std::string &v);
+
   SqliteQuery(const std::string &q, sqlite3 *db);
 protected:
 private:

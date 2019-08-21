@@ -3,6 +3,7 @@
 #include <string>
 #include "src/sqlite3.h"
 #include <memory>
+#include <utility>
 
 class SqliteQuery;
 
@@ -31,6 +32,9 @@ public:
 
   void nuke(void);
   bool next(void);
+
+  std::pair<const void*, std::size_t> getBytes(int col);
+  std::string getString(int col);
 
   ~SqliteResults()
   {

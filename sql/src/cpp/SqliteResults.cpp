@@ -62,3 +62,13 @@ bool SqliteResults::next()
     return false;
   }
 }
+
+std::pair<const void*, std::size_t> SqliteResults::getBytes(int col)
+{
+  return std::pair<const void*, std::size_t>(sqlite3_column_blob(q, col), sqlite3_column_bytes(q, col));
+}
+
+std::string SqliteResults::getString(int col)
+{
+  return std::string((const char *)(sqlite3_column_text(q, col)), sqlite3_column_bytes(q, col));
+}

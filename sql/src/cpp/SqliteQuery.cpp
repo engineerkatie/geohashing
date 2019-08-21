@@ -35,6 +35,18 @@ SqliteQuery::SqliteQuery(const std::string &sql, sqlite3 *db)
   }
 }
 
+SqliteQuery *SqliteQuery::bind(std::size_t index, const void *data, std::size_t size)
+{
+  sqlite3_bind_blob(q, index, data, size, SQLITE_TRANSIENT);
+  return this;
+}
+
+SqliteQuery *SqliteQuery::bind(std::size_t index, const std::string &v)
+{
+  sqlite3_bind_text(q, index, v.c_str(), v.length(), SQLITE_TRANSIENT);
+  return this;
+}
+
 std::shared_ptr<SqliteResults> SqliteQuery::run()
 {
   auto r = std::make_shared<SqliteResults>(shared_from_this(), q);
